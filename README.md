@@ -1,7 +1,8 @@
 # stock_tweets: What #fintwitter is talking about
 ## R shiny app that scraps tweets on user defined ticker symbols
 
-This R shiny app (currently undeployed, but fully functional) takes one of more ticker symbols as inputs and reproduces the most recent/popular tweets mentioning the user specified tickers, produces a social network graph detailing interactions (comments, likes and retweets) amongst users, and time series of tweet emotions and sentiments. The purpose of this webapp is to make it easier to see which stocks the twitter community is talking about and take advantage of the tremendous resources shared generously by traders and investors on the platform. 
+This R shiny app (currently undeployed, but fully functional) takes one or more ticker symbols as inputs and reproduces the most recent/popular tweets mentioning the user specified tickers, produces a social network graph detailing interactions (comments, likes and retweets) amongst users, and time series of tweet emotions and sentiments. The purpose of this webapp is to make it easier to see which stocks the twitter community is talking about and take advantage of the tremendous resources shared generously by traders and investors on the platform. 
+
 Usual disclaimer: No content in the tweets should be interpreted as investment advise and one should always do their own due diligence before making an investment. 
 
 ## Prerequisites
@@ -57,4 +58,13 @@ A time series chart of tweet sentiment using the NRC Emotion Lexicon. The higher
 
 ## Acknowledgements
 
+* Sean Case
+* Catherine Evans
+* Carson Farmer
+* Michael W. Kearney
+* Marion Louveaux
+* Sharon Machlis
+* Chaitanya Sagar
+* Leonardo Toglia
+* Leah Wasser
 
