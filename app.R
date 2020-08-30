@@ -255,7 +255,7 @@ server <- function(input, output) {
   
   output$sentiment_graph <- renderPlotly({
     
-    #generates sentiment bar plot --- 
+    #--- generates sentiment bar plot --- 
     
     plot_ly(pie_words, x=~sentiment, y=~n, type="bar", color=~sentiment) %>%
       layout(xaxis=list(title=""), showlegend=FALSE,
