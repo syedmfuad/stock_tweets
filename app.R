@@ -86,9 +86,9 @@ ui <- fluidPage(
         tabPanel("Tweet table", reactableOutput("tweet_table")),
         tabPanel("Network graph", visNetworkOutput("network_graph")),
         tabPanel("Popular tickers", reactableOutput("popular_tweet_table")),
-        tabPanel("Sentiment graphs", plotlyOutput("sentiment_graph")),
-        tabPanel("Sentiment frequency chart", plotOutput("sentiment_frequency")),
-        tabPanel("Interactive sentiment frequency chart", plotOutput("sentiment_frequency_plot"))
+        tabPanel("Sentiment histogram", plotlyOutput("sentiment_graph")),
+        tabPanel("Sentiment time series", plotOutput("sentiment_frequency")),
+        tabPanel("Sentiment scores time series", plotOutput("sentiment_frequency_plot"))
       )
     )
   )
