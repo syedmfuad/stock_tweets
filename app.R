@@ -61,6 +61,8 @@ ui <- fluidPage(
                                                        "Indonesian"="ind", "German"="ger", "Japanese"="jpn"), 
                   selected="en"),
       
+      #--- filters tweets by either popularity, date tweeted or a combination of both ---
+      
       selectInput("type", "Type of search result", choices=list("Recent"="recent", "Mixed"="mixed", 
                                                                 "Popular"="popular"), 
                   selected="recent"),
@@ -78,7 +80,7 @@ ui <- fluidPage(
       
     ),
     
-    # Show results
+    #--- show results ---
     mainPanel(
       tabsetPanel(
         tabPanel("Tweet table", reactableOutput("tweet_table")),
@@ -92,12 +94,15 @@ ui <- fluidPage(
   )
 )
 
-# Define server logic 
+#--- define server logic ---
+
 server <- function(input, output) {
   
-  #get data
+  #--- gets data from twitter --- 
   
   tweet_df <- eventReactive(input$get_data, {
+    
+    #--- creates vector from user specified tweets and adds $ before tickers ---
     
     var2 <- strsplit(input$ticker_to_search, " ")
     var3 <- unlist(var2)
@@ -110,7 +115,7 @@ server <- function(input, output) {
   
   tweet_table_data <- reactive({
     
-    #data for table
+    #--- filters only selected columns ---
     
     req(tweet_df())
     tweet_df() %>%
@@ -128,7 +133,7 @@ server <- function(input, output) {
   
   output$tweet_table <- renderReactable({
     
-    #table output
+    #--- table output containing tweet, date created, user handle, urls ---
     
     reactable::reactable(tweet_table_data(), 
                          filterable = TRUE, searchable = TRUE, bordered = TRUE, striped = TRUE, highlight = TRUE,
@@ -146,7 +151,7 @@ server <- function(input, output) {
   
   output$download_data <- downloadHandler(
     
-    #download data
+    #--- downloads the tweet table in csv format --- 
     
     filename = function() {
       paste(input$ticker_to_search, "_", Sys.Date(), ".csv", sep = "")
@@ -158,7 +163,7 @@ server <- function(input, output) {
   
   network_graph_data <- reactive({
     
-    #network data
+    #--- generates network graph data --- 
     
     network_data <- tweet_table_data() %>% filter(RT == TRUE) %>% gt_edges(User, RT_name) %>% gt_nodes() %>% gt_graph()
     edges_col <- igraph::edge_attr(network_data, name = "n") %>%
@@ -171,7 +176,7 @@ server <- function(input, output) {
   
   output$network_graph <- renderVisNetwork({
     
-    #network graph
+    #--- generates network graph ---
     
     visIgraph(network_graph_data()) %>%
       visLayout(randomSeed = 42, improvedLayout = TRUE) %>%
@@ -196,7 +201,7 @@ server <- function(input, output) {
   
   output$popular_tweet_table <- renderReactable({
     
-    #table output with initial data so no need to get data again
+    #--- table output with most popular tickers ---
     
     reactable::reactable(tweet_table_data() %>% filter(!RT) %>% unnest(Symbols) %>% 
                            mutate(Tickers = tolower(Symbols)) %>% filter(!is.na(Tickers)) %>% 
@@ -208,11 +213,13 @@ server <- function(input, output) {
   
   sentiment_graph_data <- reactive({
     
-    #sentiment graph data
+    #--- generates data for sentiment bar plot ---
     
     tidy_text <- tweet_table_data() %>% unnest_tokens(word, Tweet)
     
-    my_stop_words <- tibble( #construct a dataframe
+    #--- construct a dataframe with stop words ---
+    
+    my_stop_words <- tibble( 
       word = c(
         "https",
         "t.co",
@@ -224,13 +231,11 @@ server <- function(input, output) {
       lexicon = "twitter"
     )
     
-    # Connect stop words
     all_stop_words <- stop_words %>%
-      bind_rows(my_stop_words) # here we are connecting two data frames
+      bind_rows(my_stop_words) 
     
-    # Remove numbers
     no_numbers <- tidy_text %>%
-      filter(is.na(as.numeric(word))) # remember filter() returns rows where conditions are true
+      filter(is.na(as.numeric(word))) 
     
     no_stop_words <- no_numbers %>%
       anti_join(all_stop_words, by = "word")
@@ -240,9 +245,9 @@ server <- function(input, output) {
       inner_join(nrc, by="word")
     
     pie_words<- nrc_words %>%
-      group_by(sentiment) %>% # group by sentiment type
-      tally(name="Count") %>% # counts number of rows
-      arrange(desc(n)) # arrange sentiments in descending order based on frequency
+      group_by(sentiment) %>% 
+      tally(name="Count") %>% 
+      arrange(desc(n)) 
     
     pie_words
     
@@ -250,7 +255,7 @@ server <- function(input, output) {
   
   output$sentiment_graph <- renderPlotly({
     
-    #plot sentiment graph
+    #generates sentiment bar plot --- 
     
     plot_ly(pie_words, x=~sentiment, y=~n, type="bar", color=~sentiment) %>%
       layout(xaxis=list(title=""), showlegend=FALSE,
@@ -260,20 +265,20 @@ server <- function(input, output) {
   
   tweet_data <- reactive({
     
-    #get data for sentiment frequency
+    #--- generates data for time series of sentiment category (negative, neutral and positive) --- 
     
     req(tweet_table_data())
     
     tweet_data <- tweet_table_data() %>%
       select(DateTime, Tweet)
     
+    #--- removes unnecessary symbols --- 
+    
     tweet_data$Tweet <- tweet_data$Tweet %>% {gsub("^[[:space:]]*","", .)} %>% {gsub("[[:space:]]*$","", .)} %>%
     {gsub(" +"," ", .)} %>% {gsub("'", "%%", .)} %>% {iconv(., "latin1", "ASCII", sub="")} %>%
     {gsub("<(.*)>", "", .)} %>% {gsub("\\ \\. ", " ", .)} %>% {gsub("  ", " ", .)} %>% {gsub("%%", "\'", .)} %>%
     {gsub("%%", "\'", .)} %>% {gsub("https(.*)*$", "", .)} %>% {gsub("\\n", "-", .)} %>% {gsub("--", "-", .)} %>%
     {gsub("&amp;", "&", .)}
-    
-    #tweet_data$Tweet <- `x$text[x$text == " "]` <- "<no text>"
     
     sentiment <- analyzeSentiment(tweet_data$Tweet)
     sentiment2 <- sentiment$SentimentQDAP
@@ -300,7 +305,7 @@ server <- function(input, output) {
   
   output$sentiment_frequency <- renderPlot({
     
-    #sentiment frequency plot
+    #--- generates time series of sentiment category (negative, neutral and positive) ---
     
     freq2 <- tweet_data()
     
@@ -312,7 +317,7 @@ server <- function(input, output) {
   
   frequency_data_p1 <- reactive({
     
-    #interactive sentiment frequency plot
+    #--- generates first batch of data for time series of sentiment scores ---
     
     req(tweet_table_data())
     
@@ -332,7 +337,7 @@ server <- function(input, output) {
   
   frequency_data_p2 <- reactive({
     
-    #interactive sentiment frequency plot
+    #--- generates second batch of data for time series of sentiment scores ---
     
     pivot_basic <- frequency_data_p1()
     
@@ -345,6 +350,8 @@ server <- function(input, output) {
   })
   
   output$sentiment_frequency_plot <- renderPlot({
+    
+    #--- generates time series of sentiment scores ---
     
     df_new2 <- frequency_data_p1()
     pivot2 <- frequency_data_p2()
@@ -361,5 +368,5 @@ server <- function(input, output) {
 }
 
 
-# Run the application 
+#--- run the application ---
 shinyApp(ui = ui, server = server)
