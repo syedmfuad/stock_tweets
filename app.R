@@ -1,22 +1,21 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+## -------------stock-tweets-----------
+# Authors        : Syed M. Fuad
+# Data           : Twitter developer API keys and tokens 
+# New Techniques : Scraping, Sentiment Analysis
+#--------
 
-#get tweets from users data object
+#get tweets and tweet sentiments from users data object
 #stock_tweets
 
-#makes links clickable
+#--- loading required libraries ---
 
 library(shiny)
 library(pacman)
 pacman::p_load(rtweet, reactable, glue, stringr, httpuv, dplyr, purrr, forcats, ggplot2, graphTweets, 
                igraph, opencage, RColorBrewer, readr, rnaturalearth, sf, tidyr, visNetwork, adegenet, 
                tm, ggpubr, tidytext, textdata, lubridate, SentimentAnalysis, glue, plotly, syuzhet) 
+
+#--- function to make twitter links clickable ---
 
 make_url_html <- function(url) {
   if(length(url) < 2) {
@@ -30,17 +29,17 @@ make_url_html <- function(url) {
   }
 }
 
-
+#--- adding ui controls ---
 
 ui <- fluidPage(
   
-  # Application title
+  #--- application title ---
   titlePanel("Stock Tweets"),
   
-  # Sidebar 
+  #--- user inputs ---
   sidebarLayout(
     sidebarPanel(
-      textInput("hashtag_to_search",
+      textInput("ticker_to_search",
                 "Ticker to search (for multiple tickers, separate them by a space):",
                 value = "SE"),
       
@@ -53,6 +52,8 @@ ui <- fluidPage(
       
       dateRangeInput("date_picker", label = "Select dates:", start = "2020-01-27", 
                      end = as.character(Sys.Date())),
+      
+      #--- scrap tweets from user specified language ---
       
       selectInput("language", "Language", choices=list("English"="en", "French"="fe", "Spanish"="spa",
                                                        "Chinese"="chi", "Hindi"="hin", "Arabic"="ara",
@@ -98,7 +99,7 @@ server <- function(input, output) {
   
   tweet_df <- eventReactive(input$get_data, {
     
-    var2 <- strsplit(input$hashtag_to_search, " ")
+    var2 <- strsplit(input$ticker_to_search, " ")
     var3 <- unlist(var2)
     var4 <- paste0("$", var3)
     var5 <- paste0(var4, collapse=" OR ")
@@ -148,7 +149,7 @@ server <- function(input, output) {
     #download data
     
     filename = function() {
-      paste(input$hashtag_to_search, "_", Sys.Date(), ".csv", sep = "")
+      paste(input$ticker_to_search, "_", Sys.Date(), ".csv", sep = "")
     },
     content = function(file) {
       write.csv(tweet_table_data(), file, row.names = FALSE)
@@ -350,7 +351,7 @@ server <- function(input, output) {
     
     ggplot(pivot2[-1,], aes(x = hour, y = mean_sentiment)) + 
       geom_line(group = 1, size=1) + geom_point(size=2) + theme_minimal() + 
-      labs(title = paste0('Average sentiment of tweetings mentioning "', input$hashtag_to_search,'"'),
+      labs(title = paste0('Average sentiment of tweetings mentioning "', input$ticker_to_search,'"'),
            subtitle = paste0(pivot2$hour[2],' - ',pivot2$hour[nrow(pivot2)],' on ', 
                              format(df_new2$time[1], '%d %B %Y')),
            x = 'Date', y = 'Sentiment', caption = 'Source: Twitter API')
